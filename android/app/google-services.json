@@ -2,7 +2,8 @@
   "project_info": {
     "project_number": "441667201235",
     "project_id": "waygo-bc28e",
-    "storage_bucket": "waygo-bc28e.firebasestorage.app"
+    "storage_bucket": "waygo-bc28e.firebasestorage.app",
+    "firebase_url": "https://waygo-bc28e-default-rtdb.firebaseio.com"
   },
   "client": [
     {
