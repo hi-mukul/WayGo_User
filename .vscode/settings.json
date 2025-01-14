@@ -1,0 +1,5 @@
+{
+    "emulator.emulatorPathWindows": "C:\\Users\\hp\\AppData\\Local\\Android\\Sdk\\emulator",
+    "emulator.emulatorPath": "C:\\Users\\hp\\AppData\\Local\\Android\\Sdk\\emulator",
+    "emulator.androidColdBoot": true
+}

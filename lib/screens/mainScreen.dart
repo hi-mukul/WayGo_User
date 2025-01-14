@@ -1,10 +1,13 @@
 import 'dart:async';
-
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:geocoder2/geocoder2.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
 import 'package:waygo/Assistants/assistantMethod.dart';
+import 'package:waygo/global/global.dart';
+import 'package:waygo/global/mapKey.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -65,8 +68,51 @@ class _MainScreenState extends State<MainScreen> {
 
     String humanReadableAddress =  await AssistanceMethod.searchAddressForGeographicCoordinates(userCurrentPosition!, context);
     print("This is our address =" + humanReadableAddress);
+    setState(() {
+      pickLoaction = latPosition; // Update pickLoaction
+      _address = humanReadableAddress; // Update address
+    });
+
+    userName = userModleCurrentInfo!.name!;
+    userEmail = userModleCurrentInfo!.email!;
+
+    // initializedGeoFireListener();
+    //
+    // AssistanceMethod.readTripKeysForOnlineUser(context);
+  }
+
+  getAddressFromLatLag() async {
+    if (pickLoaction == null) return; // Ensure pickLoaction is not null
+
+    try {
+      GeoData data = await Geocoder2.getDataFromCoordinates(
+        latitude: pickLoaction!.latitude,
+        longitude: pickLoaction!.longitude,
+        googleMapApiKey: mapKey,
+      );
+      setState(() {
+        _address = data.address; // Update the address
+      });
+      print("Fetched Address: $_address");
+    } catch (e) {
+      print("Error fetching address: $e");
+    }
+  }
 
 
+  checkIfLocationPermissionAllowed()async{
+    _locationPermission = await Geolocator.requestPermission();
+
+    if(_locationPermission == LocationPermission.denied){
+      _locationPermission  = await Geolocator.requestPermission();
+    }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    checkIfLocationPermissionAllowed();
   }
 
   Widget build(BuildContext context) {
@@ -79,7 +125,7 @@ class _MainScreenState extends State<MainScreen> {
           children: [
             GoogleMap(
               mapType: MapType.normal,
-              myLocationButtonEnabled: true,
+              myLocationEnabled: true,
               zoomGesturesEnabled: true,
               zoomControlsEnabled: true,
               initialCameraPosition: _kGooglePlex,
@@ -104,9 +150,34 @@ class _MainScreenState extends State<MainScreen> {
                 }
               },
               onCameraIdle: (){
-                // getAddressFromLatLag();
+                getAddressFromLatLag();
               },
             ),
+            Align(
+              alignment: Alignment.center,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 35),
+                child: Image.asset("assets/images/pick.png", height: 45, width: 45,),
+              ),
+            ),
+
+            Positioned(
+              top: 40,
+              right: 20,
+              left: 20,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black),
+                  color: Colors.white,
+                ),
+                padding: EdgeInsets.all(21),
+                child: Text(_address ?? "Set your pickup location ",
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
+                ),
+              ),
+            ),
+
           ],
         ),
       ),
