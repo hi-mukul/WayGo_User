@@ -42,7 +42,7 @@
             android:value="AIzaSyAdaCJqLrTD3MUmTqFuI_xAhMcIh74xyXo"/>
         <meta-data
             android:name="com.google.android.maps.v2.LOG_LEVEL"
-            android:value="NONE" />
+            android:value="AIzaSyAdaCJqLrTD3MUmTqFuI_xAhMcIh74xyXo" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

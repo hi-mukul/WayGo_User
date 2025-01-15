@@ -5,9 +5,13 @@ import 'package:geocoder2/geocoder2.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart' as loc;
+import 'package:provider/provider.dart';
 import 'package:waygo/Assistants/assistantMethod.dart';
 import 'package:waygo/global/global.dart';
 import 'package:waygo/global/mapKey.dart';
+import 'package:waygo/infoHandler/app_info.dart';
+
+import '../models/direction.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,7 +22,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
 
-  LatLng? pickLoaction;
+  LatLng? pickLocation;
   loc.Location location = loc.Location();
   String ? _address;
 
@@ -57,39 +61,58 @@ class _MainScreenState extends State<MainScreen> {
 
   BitmapDescriptor? activeNearbyIcon;
 
-  locateUserPosition() async{
-    Position cPosition = await Geolocator.getCurrentPosition();
-    userCurrentPosition = cPosition;
+  locateUserPosition() async {
+    try {
+      Position cPosition = await Geolocator.getCurrentPosition();
+      print("User Position: ${cPosition.latitude}, ${cPosition.longitude}");
+      userCurrentPosition = cPosition;
 
-    LatLng latPosition =  LatLng(userCurrentPosition!.latitude, userCurrentPosition!.longitude);
-    CameraPosition cameraPosition= CameraPosition(target: latPosition, zoom: 15);
+      LatLng latPosition = LatLng(userCurrentPosition!.latitude, userCurrentPosition!.longitude);
+      CameraPosition cameraPosition = CameraPosition(target: latPosition, zoom: 15);
+      newGoogleMapController!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
 
-    newGoogleMapController!.animateCamera(CameraUpdate.newCameraPosition(cameraPosition));
+      // Fetch address
+      String humanReadableAddress = await AssistanceMethod.searchAddressForGeographicCoordinates(userCurrentPosition!, context);
+      print("Fetched Address from AssistanceMethod: $humanReadableAddress");
 
-    String humanReadableAddress =  await AssistanceMethod.searchAddressForGeographicCoordinates(userCurrentPosition!, context);
-    print("This is our address =" + humanReadableAddress);
-    setState(() {
-      pickLoaction = latPosition; // Update pickLoaction
-      _address = humanReadableAddress; // Update address
-    });
+      setState(() {
+        pickLocation = latPosition;
+        _address = humanReadableAddress; // Update the local address variable
+      });
 
-    userName = userModleCurrentInfo!.name!;
-    userEmail = userModleCurrentInfo!.email!;
+      userName = userModleCurrentInfo?.name ?? "Unknown User";
+      userEmail = userModleCurrentInfo?.email ?? "Unknown Email";
+
+      print("UserName: $userName, UserEmail: $userEmail");
+    } catch (e) {
+      print("Error in locateUserPosition: $e");
+    }
+  }
 
     // initializedGeoFireListener();
     //
     // AssistanceMethod.readTripKeysForOnlineUser(context);
-  }
+
 
   getAddressFromLatLag() async {
-    if (pickLoaction == null) return; // Ensure pickLoaction is not null
+    if (pickLocation == null) return; // Ensure pickLocation is not null
 
     try {
       GeoData data = await Geocoder2.getDataFromCoordinates(
-        latitude: pickLoaction!.latitude,
-        longitude: pickLoaction!.longitude,
+        latitude: pickLocation!.latitude,
+        longitude: pickLocation!.longitude,
         googleMapApiKey: mapKey,
       );
+      print("Geocoder Response: ${data.address}");
+
+      Directions userPickupAddress = Directions();
+      userPickupAddress.locationLatitude = pickLocation!.latitude;
+      userPickupAddress.locationLongitude = pickLocation!.longitude;
+      userPickupAddress.locationName = data.address;
+
+      //  Update Pick up location of user using cursor
+      Provider.of<AppInfo>(context, listen: false).updatePickUpLocationAddress(userPickupAddress);
+
       setState(() {
         _address = data.address; // Update the address
       });
@@ -100,13 +123,20 @@ class _MainScreenState extends State<MainScreen> {
   }
 
 
-  checkIfLocationPermissionAllowed()async{
-    _locationPermission = await Geolocator.requestPermission();
-
-    if(_locationPermission == LocationPermission.denied){
-      _locationPermission  = await Geolocator.requestPermission();
+  checkIfLocationPermissionAllowed() async {
+    try {
+      _locationPermission = await Geolocator.requestPermission();
+      if (_locationPermission == LocationPermission.denied) {
+        _locationPermission = await Geolocator.requestPermission();
+      }
+      if (_locationPermission == LocationPermission.deniedForever) {
+        print("Location permissions are permanently denied. Please enable them in settings.");
+      }
+    } catch (e) {
+      print("Error in checkIfLocationPermissionAllowed: $e");
     }
   }
+
 
   @override
   void initState() {
@@ -137,15 +167,15 @@ class _MainScreenState extends State<MainScreen> {
                 newGoogleMapController = controller;
 
                 setState(() {
-
+                  bottomPaddingOfMap = 200;
                 });
 
                 locateUserPosition();
               },
               onCameraMove: (CameraPosition? position){
-                if(pickLoaction != position!.target){
+                if(pickLocation != position!.target){
                   setState(() {
-                    pickLoaction=position.target;
+                    pickLocation=position.target;
                   });
                 }
               },
@@ -170,10 +200,14 @@ class _MainScreenState extends State<MainScreen> {
                   border: Border.all(color: Colors.black),
                   color: Colors.white,
                 ),
-                padding: EdgeInsets.all(21),
-                child: Text(_address ?? "Set your pickup location ",
+                padding: EdgeInsets.all(22),
+                child: Text(
+                  Provider.of<AppInfo> (context).userPickUpLocation?.locationName !=null
+                      ? (Provider.of<AppInfo>(context).userPickUpLocation!.locationName!).substring(0,24) + "..." : "Not Getting Address.",
                   overflow: TextOverflow.visible,
                   softWrap: true,
+                  style: TextStyle(color: Colors.black),
+
                 ),
               ),
             ),

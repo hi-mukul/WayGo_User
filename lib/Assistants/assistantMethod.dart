@@ -1,11 +1,13 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 import 'package:waygo/Assistants/requestAssistant.dart';
 import 'package:waygo/global/global.dart';
 import 'package:waygo/models/direction.dart';
 import 'package:waygo/models/userModel.dart';
 import '../global/mapKey.dart';
+import '../infoHandler/app_info.dart';
 
 class AssistanceMethod{
 
@@ -40,7 +42,7 @@ class AssistanceMethod{
       userPickupAddress.locationName = humanReadableAddress;
 
       // Optional: Update the context's state (if needed)
-      // Provider.of<AppInfo>(context, listen: false).updatePickUpLocationAddress(userPickupAddress);
+      Provider.of<AppInfo>(context, listen: false).updatePickUpLocationAddress(userPickupAddress);
     }
 
     return humanReadableAddress;
