@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:waygo/infoHandler/app_info.dart';
+import 'package:waygo/screens/searchPlaceScreen.dart';
 import 'package:waygo/splash/splashScreen.dart';
 import 'package:waygo/themeProvider/theme_provider.dart';
 

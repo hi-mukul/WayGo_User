@@ -5,3 +5,5 @@ import 'package:waygo/models/userModel.dart';
 final FirebaseAuth firebaseAuth=FirebaseAuth.instance;
 User? currentUser;
 userModel? userModleCurrentInfo;
+
+String userDropoffAddress = "";
