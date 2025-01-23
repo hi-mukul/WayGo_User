@@ -16,36 +16,59 @@ class SearchPlaceScreen extends StatefulWidget {
 class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
 
   List<PredictedPlaces> placesPredictedList = [];
+  bool isLoading = false;
 
   findPlaceAutoCompleteSearchValue(String inputText) async {
-    if(inputText.length > 1 && inputText.isNotEmpty){
-      String urlAutoCompleteSearch = "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$inputText&key=$mapKey&components=country:IN";
+    if (inputText.length > 1 && inputText.isNotEmpty) {
+      setState(() {
+        isLoading = true; // Show loading indicator while waiting for results
+      });
 
-      var responseAutoCompleteSearch = await RequestAssistant.recieveRequest(urlAutoCompleteSearch);
+      String urlAutoCompleteSearch =
+          "https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$inputText&key=$mapKey&components=country:IN";
 
-      if(responseAutoCompleteSearch == "Error occured. Failed No response"){
-        return;
-      }
+      try {
+        var responseAutoCompleteSearch = await RequestAssistant.recieveRequest(urlAutoCompleteSearch);
 
-      if(responseAutoCompleteSearch["status"]=="OK"){
-        var placePredictions = responseAutoCompleteSearch["predictions"];
+        if (responseAutoCompleteSearch == "Error occured. Failed No response") {
+          setState(() {
+            isLoading = false;
+          });
+          return;
+        }
 
-        var placePredictionsList = (placePredictions as List).map((jsonData) => PredictedPlaces.fromJson(jsonData)).toList();
+        if (responseAutoCompleteSearch["status"] == "OK") {
+          var placePredictions = responseAutoCompleteSearch["predictions"];
+          var placePredictionsList = (placePredictions as List).map((jsonData) => PredictedPlaces.fromJson(jsonData)).toList();
 
+          setState(() {
+            placesPredictedList = placePredictionsList;
+            isLoading = false; // Hide loading indicator once results are fetched
+          });
+        }
+      } catch (error) {
         setState(() {
-          placesPredictedList =  placePredictionsList;
+          isLoading = false;
         });
+        // Handle the error and possibly show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error occurred while fetching places. Please try again later.')),
+        );
       }
+    } else {
+      setState(() {
+        placesPredictedList = []; // Clear the list when input is empty or too short
+        isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-
-    bool darkTheme=MediaQuery.of(context).platformBrightness==Brightness.dark;
+    bool darkTheme = MediaQuery.of(context).platformBrightness == Brightness.dark;
 
     return GestureDetector(
-      onTap: (){
+      onTap: () {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
@@ -53,7 +76,7 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
         appBar: AppBar(
           backgroundColor: darkTheme ? Colors.amber.shade500 : Colors.blue,
           leading: GestureDetector(
-            onTap: (){
+            onTap: () {
               Navigator.pop(context);
             },
             child: Icon(
@@ -61,7 +84,7 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
             ),
           ),
           title: Text(
-              "Search & Set dropoff location",
+            "Search & Set Dropoff Location",
             style: TextStyle(
               color: darkTheme ? Colors.black : Colors.white,
             ),
@@ -72,89 +95,74 @@ class _SearchPlaceScreenState extends State<SearchPlaceScreen> {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: darkTheme? Colors.amber.shade500 : Colors.blue,
+                color: darkTheme ? Colors.amber.shade500 : Colors.blue,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.white54,
                     blurRadius: 8,
                     spreadRadius: 0.5,
-                    offset: Offset(
-                        0.7,
-                        0.7
-                    ),
+                    offset: Offset(0.7, 0.7),
                   ),
                 ],
               ),
-
               child: Padding(
                 padding: EdgeInsets.all(10.0),
                 child: Row(
                   children: [
                     Icon(
                       Icons.adjust_sharp,
-                      color: darkTheme? Colors.black : Colors.white,
+                      color: darkTheme ? Colors.black : Colors.white,
                     ),
-
-                    SizedBox(height: 18.0,),
-
+                    SizedBox(height: 18.0),
                     Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.all(8),
-                          child: TextField(
-                            onChanged: (value){
-                              findPlaceAutoCompleteSearchValue(value);
-                            },
-                            decoration: InputDecoration(
-                              hintText: "Search Location Here...",
-                              hintStyle: TextStyle(
-                                color: darkTheme ? Colors.black : Colors.white54,
-                              ),
-                              fillColor: darkTheme ? Colors.black : Colors.white54,
-                              filled: true,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding: EdgeInsets.only(
-                                left: 11,
-                                top: 8,
-                                bottom: 8,
-                              ),
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: TextField(
+                          onChanged: (value) {
+                            findPlaceAutoCompleteSearchValue(value);
+                          },
+                          decoration: InputDecoration(
+                            hintText: "Search Location Here...",
+                            hintStyle: TextStyle(
+                              color: darkTheme ? Colors.black : Colors.white54,
                             ),
-                            style: TextStyle(
-                              color: darkTheme ? Colors.white : Colors.black,
+                            fillColor: darkTheme ? Colors.black : Colors.white54,
+                            filled: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: EdgeInsets.only(
+                              left: 11,
+                              top: 8,
+                              bottom: 8,
                             ),
                           ),
+                          style: TextStyle(
+                            color: darkTheme ? Colors.white : Colors.black,
+                          ),
                         ),
+                      ),
                     ),
-
                   ],
                 ),
               ),
             ),
-
-            // Display place predictions result
-
-            (placesPredictedList.length > 0)
-            ? Expanded(
-                child:  ListView.separated(
-                  itemCount: placesPredictedList.length,
-                  physics: ClampingScrollPhysics(),
-                  itemBuilder: (context, index){
-                    return PlacePredictionTileDesign(
-                      predictedPlaces: placesPredictedList[index],
-                    );
-                  },
-                  separatorBuilder: (BuildContext context, int index){
-                    return Divider(
-                      height: 0,
-                      color: darkTheme ? Colors.amber.shade500 : Colors.blue,
-                      thickness: 0,
-                    );
-                  },
-
-                ),
-            ) : Container(),
+            // Loading indicator
+            isLoading
+                ? Center(child: CircularProgressIndicator(color: darkTheme ? Colors.amber.shade500 : Colors.blue))
+                : placesPredictedList.isNotEmpty
+                ? Expanded(
+              child: ListView.builder(
+                itemCount: placesPredictedList.length,
+                itemBuilder: (context, index) {
+                  return PlacePredictionTileDesign(
+                    predictedPlaces: placesPredictedList[index],
+                  );
+                },
+              ),
+            )
+                : Container(),
           ],
         ),
       ),

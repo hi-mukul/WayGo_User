@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoder2/geocoder2.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -10,11 +11,12 @@ import 'package:waygo/Assistants/assistantMethod.dart';
 import 'package:waygo/global/global.dart';
 import 'package:waygo/global/mapKey.dart';
 import 'package:waygo/infoHandler/app_info.dart';
+import 'package:waygo/screens/searchPlaceScreen.dart';
 
 import '../models/direction.dart';
+import '../widgets/progress_dialog.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -47,7 +49,7 @@ class _MainScreenState extends State<MainScreen> {
   LocationPermission? _locationPermission;
   double bottomPaddingOfMap = 0;
 
-  List<LatLng> pLineCoordinates=[];
+  List<LatLng> pLineCoordinatedList=[];
   Set<Polyline> polyLinetSet={};
   Set<Marker> markerSet={};
   Set<Circle> circlesSet={};
@@ -80,8 +82,8 @@ class _MainScreenState extends State<MainScreen> {
         _address = humanReadableAddress; // Update the local address variable
       });
 
-      userName = userModleCurrentInfo!.name ?? "Unknown User";
-      userEmail = userModleCurrentInfo!.email ?? "Unknown Email";
+      userName = userModleCurrentInfo?.name ?? "Unknown User";
+      userEmail = userModleCurrentInfo?.email ?? "Unknown Email";
 
       print("UserName: $userName, UserEmail: $userEmail");
     } catch (e) {
@@ -93,6 +95,124 @@ class _MainScreenState extends State<MainScreen> {
     //
     // AssistanceMethod.readTripKeysForOnlineUser(context);
 
+  Future<void> drawPolyFromOriginToDestination(bool darkTheme) async{
+    var originPosition = Provider.of<AppInfo>(context, listen: false).userPickUpLocation;
+    var destinationPosition = Provider.of<AppInfo>(context, listen: false).userDropOffLocation;
+
+    var originLatLng = LatLng(originPosition!.locationLatitude!, originPosition.locationLongitude!);
+    var destinationLatLng = LatLng(destinationPosition!.locationLatitude!, destinationPosition.locationLongitude!);
+
+    showDialog(
+        context: context,
+        builder: (BuildContext context) => ProgressDialog(message: "Please wait", ),
+    );
+
+    var  directionDetailsInfo = await AssistanceMethod.obtainOriginToDestinationDirectionDetails(originLatLng, destinationLatLng);
+    setState(() {
+      tripDirectionDetailsInfo = directionDetailsInfo;
+    });
+
+    Navigator.pop(context);
+
+    PolylinePoints pPoints=PolylinePoints();
+    List<PointLatLng> decodePolyLinePointsResultList = pPoints.decodePolyline(directionDetailsInfo.e_points!);
+
+    pLineCoordinatedList.clear();
+
+    if(decodePolyLinePointsResultList.isNotEmpty){
+      decodePolyLinePointsResultList.forEach((PointLatLng pointLatLng){
+        pLineCoordinatedList.add(LatLng(pointLatLng.latitude, pointLatLng.longitude));
+      });
+    }
+
+    polyLinetSet.clear();
+    setState(() {
+      Polyline polyLine = Polyline(
+        color: darkTheme?  Colors.amberAccent : Colors.blue,
+        polylineId: PolylineId("PolylineID"),
+        jointType: JointType.round,
+        points: pLineCoordinatedList,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
+        geodesic: true,
+        width: 5,
+      );
+
+      polyLinetSet.add(polyLine);
+
+    });
+
+    LatLngBounds boundsLatLng;
+    if(originLatLng.latitude > destinationLatLng.latitude && originLatLng.longitude > destinationLatLng.longitude){
+      boundsLatLng =  LatLngBounds(
+          southwest: destinationLatLng,
+          northeast: originLatLng,
+      );
+    }
+    else if(originLatLng.longitude> destinationLatLng.longitude){
+      boundsLatLng = LatLngBounds(
+          southwest: LatLng(originLatLng.latitude, destinationLatLng.longitude),
+          northeast: LatLng(destinationLatLng.latitude, originLatLng.longitude),
+      );
+    }
+    else if(originLatLng.latitude> destinationLatLng.latitude){
+      boundsLatLng = LatLngBounds(
+        southwest: LatLng(destinationLatLng.latitude, originLatLng.longitude),
+        northeast: LatLng(originLatLng.latitude, destinationLatLng.longitude),
+      );
+    }
+    else{
+      boundsLatLng = LatLngBounds(
+          southwest: originLatLng,
+          northeast: destinationLatLng,
+      );
+    }
+
+    newGoogleMapController!.animateCamera(CameraUpdate.newLatLngBounds(boundsLatLng, 65));
+
+    Marker originMarker = Marker(
+        markerId: MarkerId("originID"),
+      infoWindow: InfoWindow(title: originPosition.locationName, snippet: "Origin"),
+      position: originLatLng,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+    );
+
+    Marker destinationMarker = Marker(
+      markerId: MarkerId("destinationID"),
+      infoWindow: InfoWindow(title: destinationPosition.locationName, snippet: "Destination"),
+      position: destinationLatLng,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+    );
+
+    setState(() {
+      markerSet.add(originMarker);
+      markerSet.add(destinationMarker);
+    });
+
+    Circle originCircle = Circle(
+      circleId: CircleId("originID"),
+      fillColor: Colors.green,
+      radius: 12,
+      strokeWidth: 3,
+      strokeColor: Colors.white,
+      center: originLatLng,
+    );
+
+    Circle destinatonCircle = Circle(
+      circleId: CircleId("destinationID"),
+      fillColor: Colors.red,
+      radius: 12,
+      strokeWidth: 3,
+      strokeColor: Colors.white,
+      center: destinationLatLng,
+    );
+
+    setState(() {
+      circlesSet.add(originCircle);
+      circlesSet.add(destinatonCircle);
+    });
+
+  }
 
   getAddressFromLatLag() async {
     if (pickLocation == null) return; // Ensure pickLocation is not null
@@ -174,7 +294,7 @@ class _MainScreenState extends State<MainScreen> {
                 locateUserPosition();
               },
               onCameraMove: (CameraPosition? position){
-                if(pickLocation != position!.target){
+                if(pickLocation != position!.target && position != null){
                   setState(() {
                     pickLocation=position.target;
                   });
@@ -195,7 +315,7 @@ class _MainScreenState extends State<MainScreen> {
 
             // UI for searching location 
             Positioned(
-                bottom: 0,
+              bottom: 0,
               left: 0,
               right: 0,
               child: Padding(padding: EdgeInsets.fromLTRB(20, 50, 20, 20),
@@ -254,7 +374,17 @@ class _MainScreenState extends State<MainScreen> {
 
                                 Padding(padding: EdgeInsets.all(5),
                                   child: GestureDetector(
-                                    onTap: (){
+                                    onTap: () async {
+                                      // go to search place screen
+                                      var responseFromSearchScreen = await Navigator.push(context, MaterialPageRoute(builder: (c) => SearchPlaceScreen()));
+
+                                      if(responseFromSearchScreen == "obtainedDropoof"){
+                                        setState(() {
+                                          openNavigationDrawer = false;
+                                        });
+                                      }
+
+                                      await drawPolyFromOriginToDestination(darkTheme);
 
                                     },
                                     child: Row(
@@ -273,7 +403,7 @@ class _MainScreenState extends State<MainScreen> {
                                             ),
                                             Text(
                                               Provider.of<AppInfo> (context).userDropOffLocation !=null
-                                                  ? (Provider.of<AppInfo>(context).userDropOffLocation!.locationName!).substring(0,30) + "..."
+                                                  ? Provider.of<AppInfo>(context).userDropOffLocation!.locationName!
                                                   : "Where to?.",
                                               style: TextStyle(color: Colors.grey, fontSize: 15, ),
                                             ),

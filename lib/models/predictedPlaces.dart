@@ -11,9 +11,11 @@ class PredictedPlaces{
     this.secondary_text,
   });
 
-  PredictedPlaces.fromJson(Map<String, dynamic> jsonData){
-     place_id = jsonData["place_id"];
-     main_text = jsonData["structured_formatting"]["main_text"];
-     secondary_text = jsonData["structured_formatting"]["secondary_text"];
+  factory PredictedPlaces.fromJson(Map<String, dynamic> jsonData){
+     return PredictedPlaces(
+         place_id : jsonData["place_id"],
+         main_text : jsonData["structured_formatting"]["main_text"],
+         secondary_text : jsonData["structured_formatting"]["secondary_text"],
+     );
   }
 }
