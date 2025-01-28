@@ -19,7 +19,7 @@ dependencies {
 
 android {
     namespace = "com.example.waygo"
-    compileSdk = 34 // Update to the latest compile SDK version
+    compileSdk = 35 // Update to the latest compile SDK version
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -34,7 +34,7 @@ android {
     defaultConfig {
         applicationId = "com.example.waygo"
         minSdkVersion 23 // Ensure minSdk matches your requirements
-        targetSdkVersion 34 // Use the latest target SDK
+        targetSdkVersion 35 // Use the latest target SDK
         versionCode 1
         versionName "1.0"
     }

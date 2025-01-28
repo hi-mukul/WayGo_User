@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:geocoder2/geocoder2.dart';
@@ -9,10 +8,10 @@ import 'package:location/location.dart' as loc;
 import 'package:provider/provider.dart';
 import 'package:waygo/Assistants/assistantMethod.dart';
 import 'package:waygo/global/global.dart';
-import 'package:waygo/global/mapKey.dart';
 import 'package:waygo/infoHandler/app_info.dart';
+import 'package:waygo/screens/precise_pickUp_location.dart';
 import 'package:waygo/screens/searchPlaceScreen.dart';
-
+import '../global/mapKey.dart';
 import '../models/direction.dart';
 import '../widgets/progress_dialog.dart';
 
@@ -35,11 +34,8 @@ class _MainScreenState extends State<MainScreen> {
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
   );
-
-
-  @override
-
   GlobalKey<ScaffoldState> _scafforState= GlobalKey<ScaffoldState>();
+
   double searchLocationContainerHeight=220;
   double waitingResponseFromDriverContainerHeight=0;
   double assignedDriverInfoContainerHeight=0;
@@ -63,9 +59,10 @@ class _MainScreenState extends State<MainScreen> {
 
   BitmapDescriptor? activeNearbyIcon;
 
+
   locateUserPosition() async {
     try {
-      Position cPosition = await Geolocator.getCurrentPosition();
+      Position cPosition = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
       print("User Position: ${cPosition.latitude}, ${cPosition.longitude}");
       userCurrentPosition = cPosition;
 
@@ -75,7 +72,7 @@ class _MainScreenState extends State<MainScreen> {
 
       // Fetch address
       String humanReadableAddress = await AssistanceMethod.searchAddressForGeographicCoordinates(userCurrentPosition!, context);
-      print("Fetched Address from AssistanceMethod: $humanReadableAddress");
+      print("Fetched Address from AssistanceMethod : " +humanReadableAddress);
 
       setState(() {
         pickLocation = latPosition;
@@ -304,6 +301,7 @@ class _MainScreenState extends State<MainScreen> {
                 getAddressFromLatLag();
               },
             ),
+
             Align(
               alignment: Alignment.center,
               child: Padding(
@@ -416,6 +414,71 @@ class _MainScreenState extends State<MainScreen> {
                               ],
                             ),
                           ),
+
+                          SizedBox(height: 5,),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                    onPressed: (){
+                                      Navigator.push(context, MaterialPageRoute(builder: (c)=> PrecisePickupScreen()));
+                                    },
+                                    child: Text(
+                                        "Change PickUp",
+                                      style: TextStyle(
+                                        color: darkTheme? Colors.black : Colors.white,
+                                      ),
+                                    ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: darkTheme? Colors.amber.shade500 : Colors.blue,
+                                    foregroundColor: darkTheme? Colors.black : Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    textStyle: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                
+                                    )
+                                  ),
+                                ),
+                              ),
+
+                              SizedBox(
+                                height: 12,
+                                width: 5,
+                              ),
+
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: (){
+                                
+                                  },
+                                  child: Text(
+                                    "Request a ride",
+                                    style: TextStyle(
+                                      color: darkTheme? Colors.black : Colors.white,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                      backgroundColor: darkTheme? Colors.amber.shade500 : Colors.blue,
+                                      foregroundColor: darkTheme? Colors.black : Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      textStyle: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                
+                                      )
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+
                         ],
                       ),
                     ),
