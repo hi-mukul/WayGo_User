@@ -1,2 +1,2 @@
-String mapKey ='*';
+String mapKey ='';
 
