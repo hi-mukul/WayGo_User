@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:waygo/Assistants/assistantMethod.dart';
 import 'package:waygo/global/global.dart';
 import 'package:waygo/infoHandler/app_info.dart';
+import 'package:waygo/screens/drawer_screen.dart';
 import 'package:waygo/screens/precise_pickUp_location.dart';
 import 'package:waygo/screens/searchPlaceScreen.dart';
 import '../global/mapKey.dart';
@@ -269,9 +270,12 @@ class _MainScreenState extends State<MainScreen> {
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
+        key: _scafforState,
+        drawer: DrawerScreen(),
         body: Stack(
           children: [
             GoogleMap(
+              padding: EdgeInsets.only(top: 79, bottom: bottomPaddingOfMap),
               mapType: MapType.normal,
               myLocationEnabled: true,
               zoomGesturesEnabled: true,
@@ -291,7 +295,7 @@ class _MainScreenState extends State<MainScreen> {
                 locateUserPosition();
               },
               onCameraMove: (CameraPosition? position){
-                if(pickLocation != position!.target && position != null){
+                if(pickLocation != position!.target){
                   setState(() {
                     pickLocation=position.target;
                   });
@@ -308,6 +312,28 @@ class _MainScreenState extends State<MainScreen> {
                 padding: const EdgeInsets.only(bottom: 35),
                 child: Image.asset("assets/images/pick.png", height: 45, width: 45,),
               ),
+            ),
+
+            // custom hamburger button for drawer
+
+            Positioned(
+              top: 50,
+                left: 20,
+                child: Container(
+                  child: GestureDetector(
+                    onTap: (){
+                      _scafforState.currentState!.openDrawer();
+                    },
+                    child: CircleAvatar(
+                      backgroundColor: darkTheme? Colors.amber.shade500: Colors.white,
+                      child: Icon(
+                        Icons.menu,
+                        color: darkTheme? Colors.black: Colors.lightBlue,
+
+                      ),
+                    ),
+                  ),
+                ),
             ),
 
 

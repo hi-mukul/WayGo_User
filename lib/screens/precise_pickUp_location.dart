@@ -89,10 +89,12 @@ class _PrecisePickupScreenState extends State<PrecisePickupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool darkTheme=MediaQuery.of(context).platformBrightness==Brightness.dark;
     return Scaffold(
       body: Stack(
         children: [
           GoogleMap(
+            padding: EdgeInsets.only(top: 100, bottom: bottomPaddingOfMap),
             mapType: MapType.normal,
             myLocationEnabled: true,
             zoomGesturesEnabled: true,
@@ -103,13 +105,13 @@ class _PrecisePickupScreenState extends State<PrecisePickupScreen> {
               newGoogleMapController = controller;
 
               setState(() {
-                bottomPaddingOfMap = 99;
+                bottomPaddingOfMap = 49;
               });
 
               locateUserPosition();
             },
             onCameraMove: (CameraPosition? position){
-              if(pickLocation != position!.target && position != null){
+              if(pickLocation != position!.target){
                 setState(() {
                   pickLocation=position.target;
                 });
@@ -123,7 +125,7 @@ class _PrecisePickupScreenState extends State<PrecisePickupScreen> {
           Align(
             alignment: Alignment.center,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 35),
+              padding: EdgeInsets.only(bottom: bottomPaddingOfMap, top: 60),
               child: Image.asset("assets/images/pick.png", height: 45, width: 45,),
             ),
           ),
@@ -148,6 +150,34 @@ class _PrecisePickupScreenState extends State<PrecisePickupScreen> {
               ),
             ),
           ),
+
+          Positioned(
+            // top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Padding(padding: EdgeInsets.all(11),
+              child: ElevatedButton(
+                onPressed: (){
+                Navigator.pop(context);
+              },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: darkTheme? Colors.amber.shade500 : Colors.blue,
+                  foregroundColor: darkTheme? Colors.black : Colors.white,
+                    textStyle: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+
+                    ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ), child: Text("Set Current Location"),
+
+              ),
+            ),
+          ),
+
         ],
       ),
     );
