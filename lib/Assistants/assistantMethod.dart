@@ -27,7 +27,7 @@ class AssistanceMethod{
   }
 
   static Future<String> searchAddressForGeographicCoordinates(Position position, context) async {
-    String apiKey = ''; // Use your Google Maps API Key
+    String apiKey = 'AIzaSyCE0GI59jwIGDTK-zgJpn-A7wX_bi7S0Og'; // Use your Google Maps API Key
     // Google Maps API URL
     String apiUrl = "https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$mapKey";
     String humanReadableAddress = "";
